@@ -2,30 +2,30 @@ package com.example.rebajitasdiego.models
 
 
 data class EatingData(
+    val category: FoodCategory,
     val eatingValue: Int,
     val maxEatingValue: Int,
     val isLastHalf: Boolean
 ) {
 
     fun getCircle(currentEatingValue: Int): EatingState {
+     
         return when {
-            currentEatingValue <= maxEatingValue && currentEatingValue < eatingValue -> EatingState.FULL
-            currentEatingValue <= maxEatingValue && currentEatingValue > eatingValue -> EatingState.EMPTY
-            currentEatingValue > maxEatingValue && currentEatingValue < eatingValue -> EatingState.FULL
-            currentEatingValue == currentEatingValue -> getLastCircle(
-                currentEatingValue
-            )
-            else -> getEmptyCircle()
-        }
-    }
+            currentEatingValue <= maxEatingValue && currentEatingValue <= eatingValue -> EatingState.FULL
 
-    private fun getLastCircle(currentEatingValue: Int): EatingState {
-        return when {
-            currentEatingValue < maxEatingValue -> EatingState.FULL
-            currentEatingValue == maxEatingValue && isLastHalf -> EatingState.HALF
-            currentEatingValue == maxEatingValue && !isLastHalf -> EatingState.FULL
-            currentEatingValue > maxEatingValue -> EatingState.EMPTY
-            else -> error("Eso no possible ser")
+            currentEatingValue <= maxEatingValue &&  currentEatingValue == eatingValue + 1  && isLastHalf -> EatingState.HALF
+
+            currentEatingValue <= maxEatingValue &&  currentEatingValue == eatingValue + 1  && !isLastHalf -> EatingState.EMPTY
+
+            currentEatingValue <= maxEatingValue && currentEatingValue > eatingValue + 1 &&  maxEatingValue > eatingValue -> EatingState.EMPTY
+
+            currentEatingValue > maxEatingValue &&  currentEatingValue == eatingValue + 1  && isLastHalf -> EatingState.HALF_EXTRA
+
+            currentEatingValue > maxEatingValue && currentEatingValue <= eatingValue->  EatingState.FULL_EXTRA
+            currentEatingValue > maxEatingValue && currentEatingValue == eatingValue + 1 ->  EatingState.HALF_EXTRA
+
+
+            else -> getEmptyCircle()
         }
     }
 

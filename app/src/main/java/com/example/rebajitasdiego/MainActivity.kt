@@ -12,36 +12,33 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.rebajitasdiego.components.FoodCategory
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.rebajitasdiego.components.FoodCategoryContent
 import com.example.rebajitasdiego.models.EatingData
+import com.example.rebajitasdiego.models.FoodCategory
+import com.example.rebajitasdiego.viewModel.MainViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            PersonalData("Diego")
+            FoodMainScreen("Diego")
         }
     }
 
     @Composable
-    private fun PersonalData(name: String) {
-        val materialBlue700 = Color(0xFF1976D2)
-        val scaffoldState = rememberScaffoldState(rememberDrawerState(DrawerValue.Closed))
-        var counter by remember { mutableStateOf(0) }
+    private fun FoodMainScreen(name: String) {
+
         val vegetable = painterResource(id = R.drawable.ic_carrot)
         val bread = painterResource(id = R.drawable.ic_bread)
         val fruit = painterResource(id = R.drawable.ic_apple)
         val protein = painterResource(id = R.drawable.ic_egg)
         val dairy = painterResource(id = R.drawable.ic_milk)
         val oil = painterResource(id = R.drawable.ic_oil)
-
-
-        val foodCategoryEating = arrayOf(1, 2, 3, 3, 2, 2)
-        val maxFoodCategoryEating = arrayOf(3, 3, 6, 5, 3, 3)
-        val isLastHalf = arrayOf(false, true, true, true, false, false)
 
         val icons = listOf(
             dairy to "milk",
@@ -51,6 +48,29 @@ class MainActivity : ComponentActivity() {
             fruit to "fruit",
             vegetable to "vegetable",
         )
+        val mainViewModel = viewModel<MainViewModel>()
+
+        val foodCategoriesData by mainViewModel.foodCategoriesData.collectAsState()
+        FoodMainContent(
+            name,
+            icons,
+            foodCategoriesData,
+            onAddEating = { mainViewModel.onAddEating(it) },
+            onRemoveEating = { mainViewModel.onRemoveEating(it) })
+    }
+
+    @Composable
+    private fun FoodMainContent(
+        name: String,
+        icons: List<Pair<Painter, String>>,
+        foodCategoriesData: List<EatingData>,
+        onAddEating: (FoodCategory) -> Unit,
+        onRemoveEating: (FoodCategory) -> Unit
+    ) {
+        val materialBlue700 = Color(0xFF1976D2)
+        val scaffoldState = rememberScaffoldState(rememberDrawerState(DrawerValue.Closed))
+        var counter by remember { mutableStateOf(0) }
+
         MaterialTheme() {
             Scaffold(
                 topBar = {
@@ -59,36 +79,26 @@ class MainActivity : ComponentActivity() {
                         backgroundColor = materialBlue700
                     )
                 },
-                floatingActionButtonPosition = FabPosition.End,
-                floatingActionButton = {
-                    FloatingActionButton(onClick = { counter += 1 }) {
-                        Text("+")
-                    }
-                },
                 drawerContent = { Text(text = "drawerContent") },
                 content = {
                     Column(Modifier.fillMaxWidth()) {
-                        icons.forEachIndexed { index, pair ->
+                        foodCategoriesData.forEachIndexed { index, foodCategory ->
                             when {
-                                index % 2 == 0 -> FoodCategory(
-                                    icon = pair.first,
-                                    description = pair.second,
+                                index % 2 == 0 -> FoodCategoryContent(
+                                    icon = icons[index].first,
+                                    description = icons[index].second,
                                     modifier = Modifier.background(Color.Gray),
-                                    data = EatingData(
-                                        foodCategoryEating[index],
-                                        maxFoodCategoryEating[index],
-                                        isLastHalf[index]
-                                    )
+                                    data = foodCategory,
+                                    onAddEating = { onAddEating(it) },
+                                    onRemoveEating = { onRemoveEating(it) }
                                 )
-                                index % 2 != 0 -> FoodCategory(
-                                    icon = pair.first,
-                                    description = pair.second,
+                                index % 2 != 0 -> FoodCategoryContent(
+                                    icon = icons[index].first,
+                                    description = icons[index].second,
                                     modifier = Modifier.background(Color.LightGray),
-                                    data = EatingData(
-                                        foodCategoryEating[index],
-                                        maxFoodCategoryEating[index],
-                                        isLastHalf[index]
-                                    )
+                                    data = foodCategory,
+                                    onAddEating = { onAddEating(it) },
+                                    onRemoveEating = { onRemoveEating(it) }
                                 )
                             }
                         }
@@ -103,7 +113,29 @@ class MainActivity : ComponentActivity() {
     @Preview
     @Composable
     fun PreviewPersonalData() {
-        PersonalData("Diego")
+        val mainViewModel = viewModel<MainViewModel>()
+        val vegetable = painterResource(id = R.drawable.ic_carrot)
+        val bread = painterResource(id = R.drawable.ic_bread)
+        val fruit = painterResource(id = R.drawable.ic_apple)
+        val protein = painterResource(id = R.drawable.ic_egg)
+        val dairy = painterResource(id = R.drawable.ic_milk)
+        val oil = painterResource(id = R.drawable.ic_oil)
+
+        val icons = listOf(
+            dairy to "milk",
+            oil to "oil",
+            protein to "protein",
+            bread to "bread",
+            fruit to "fruit",
+            vegetable to "vegetable",
+        )
+        val foodCategoriesData by mainViewModel.foodCategoriesData.collectAsState()
+        FoodMainContent(
+            "Diego",
+            icons,
+            foodCategoriesData,
+            onAddEating = { mainViewModel.onAddEating(it) },
+            onRemoveEating = { mainViewModel.onAddEating(it) })
     }
 
     @Composable
