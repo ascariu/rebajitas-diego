@@ -29,7 +29,7 @@ fun EmptyCircle() {
 
 
 @Composable
-fun FilledCircle() {
+fun FilledCircle(isExtra: Boolean = false) {
     Box(
         modifier = Modifier
             .padding(start = 8.dp)
@@ -38,13 +38,13 @@ fun FilledCircle() {
             modifier = Modifier
                 .align(Alignment.Center)
                 .size(24.dp)
-                .background(color = Color.White, shape = CircleShape)
+                .background(color = if(isExtra) Color.Red else Color.White, shape = CircleShape)
         )
     }
 }
 
 @Composable
-fun HalfFilledCircle() {
+fun HalfFilledCircle(isExtra: Boolean = false) {
     Box(
         modifier = Modifier
             .padding(start = 8.dp)
@@ -58,7 +58,7 @@ fun HalfFilledCircle() {
             Box(
                 modifier = Modifier
                     .size(12.dp)
-                    .background(color = Color.White, shape = CircleShape)
+                    .background(color = if(isExtra) Color.Red else Color.White, shape = CircleShape)
                     .align(
                         Alignment.Center
                     )
