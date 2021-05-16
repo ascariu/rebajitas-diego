@@ -18,6 +18,3 @@ fun getCircleIconForEatingState(state: EatingState) =
         EatingState.HALF_EXTRA -> HalfFilledCircle(isExtra = true)
     }
 
-fun defaultEatingData(category: FoodCategory) {
-    EatingData(category, 0, 0, false)
-}

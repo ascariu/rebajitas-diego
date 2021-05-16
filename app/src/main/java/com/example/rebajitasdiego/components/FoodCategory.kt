@@ -36,10 +36,10 @@ fun FoodCategoryContent(
     description: String,
     modifier: Modifier,
     data: EatingData,
-    onAddEating: (FoodCategory) -> Unit,
-    onRemoveEating: (FoodCategory) -> Unit
+    onAddEating: (EatingData) -> Unit,
+    onRemoveEating: (EatingData) -> Unit
 ) {
-    val realEatingValue = if(data.isLastHalf) data.eatingValue + 1 else data.eatingValue
+    val realEatingValue = if (data.isLastHalf) data.eatingValue + 1 else data.eatingValue
     val maxValue = Math.max(realEatingValue, data.maxEatingValue)
     val removeIcon = painterResource(id = R.drawable.ic_baseline_remove_circle_outline_24)
     val addIcon = painterResource(id = R.drawable.ic_baseline_add_circle_outline_24)
@@ -78,8 +78,11 @@ fun FoodCategoryContent(
         }
 
 
-        Row {
-            IconButton(onClick = { onRemoveEating(data.category) }) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 4.dp, end= 4.dp)
+        ) {
+            IconButton(modifier = Modifier.size(24.dp), onClick = { onRemoveEating(data) }) {
                 Icon(
                     painter = removeIcon,
                     contentDescription = description,
@@ -88,9 +91,12 @@ fun FoodCategoryContent(
             }
             Box(
                 modifier = Modifier
-                    .padding(start = 8.dp)
+                    .padding(start = 16.dp)
             )
-            IconButton(onClick = { onAddEating(data.category) }) {
+            IconButton(
+                modifier = Modifier
+                    .size(24.dp),
+                onClick = { onAddEating(data) }) {
                 Icon(
                     painter = addIcon,
                     contentDescription = description,

@@ -1,101 +1,119 @@
 package com.example.rebajitasdiego.viewModel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
-import com.example.rebajitasdiego.models.EatingData
-import com.example.rebajitasdiego.models.FoodCategory
+import androidx.lifecycle.viewModelScope
+import com.example.rebajitasdiego.db.RebajitasDatabase
+import com.example.rebajitasdiego.db.entities.EatingDataEntity
+import com.example.rebajitasdiego.db.entities.UserProfileEntity
+import com.example.rebajitasdiego.mappers.isMale
+import com.example.rebajitasdiego.mappers.toEatingData
+import com.example.rebajitasdiego.mappers.toEatingDataEntity
+import com.example.rebajitasdiego.models.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
+    private val db = RebajitasDatabase.init(getApplication())
 
-    private val maxEatingValues = listOf(3,3,6,5,3,3)
-    private val _foodCategoriesData = MutableStateFlow(
-        FoodCategory.values().mapIndexed { index, foodCategory ->
-            EatingData(foodCategory, 0, maxEatingValues[index], false)
-        }
-    )
+    private val _userProfile = db.userProfileDao().getUser()
 
-    val foodCategoriesData: StateFlow<List<EatingData>> get() = _foodCategoriesData
+     val userProfile = _userProfile
 
-    fun getFoodCategoryData(category: FoodCategory): EatingData? {
-        return _foodCategoriesData.value.find { eatingData -> eatingData.category == category }
-
-    }
-
-    fun setFoodCategoryData(category: FoodCategory, newEatingData: EatingData): Unit {
-        val newFoodData = _foodCategoriesData.value.map { eatingData ->
-            if (eatingData.category == category) {
-                newEatingData
-            } else {
-                eatingData
+    private val _foodCategoriesData =
+        db
+            .eatingDataDao()
+            .getAllEatingData()
+            .onEach {
+                Log.d("db data", it.toString())
             }
-
-        }
-
-        _foodCategoriesData.value = newFoodData
-    }
-
-    fun onAddEating(category: FoodCategory): Unit {
-
-        val categoryToUpdate = getFoodCategoryData(category)
-
-        if (categoryToUpdate != null) {
-            val newFoodCategoryData = addEatingToFoodData(categoryToUpdate)
-            _foodCategoriesData.value = _foodCategoriesData.value.map { foodData ->
-                if (foodData.category == category) {
-                    newFoodCategoryData
-                } else {
-                    foodData
+            .combine(userProfile) { eatingDataEntities, userProfile ->
+                val maxEatingValues = if (userProfile!!.isMale) MaleMaxEatingValues
+                else FemaleMaxEatingValues
+                val foodCategories = FoodCategory.values().toList()
+                eatingDataEntities.map {
+                    it.toEatingData(userProfile!!.isMale)
                 }
+
+            }.onEach {
+                Log.d("food data", it.toString())
             }
+
+    val foodCategoriesData: Flow<List<EatingData>> get() = _foodCategoriesData
+
+
+    fun onClearAllData(){
+        Log.d("clear data form db", "Clearing data")
+        viewModelScope.launch(Dispatchers.IO) {
+            db.eatingDataDao().clearAllData()
         }
     }
 
 
-    fun onRemoveEating(category: FoodCategory): Unit {
+    fun onAddEating(eatingData: EatingData): Unit {
 
-        val categoryToUpdate = getFoodCategoryData(category)
-        if (categoryToUpdate != null) {
-            val newFoodCategoryData = removeEatingToFoodData(categoryToUpdate)
-            _foodCategoriesData.value = _foodCategoriesData.value.map { foodData ->
-                if (foodData.category == category) {
-                    newFoodCategoryData
-                } else {
-                    foodData
-                }
-            }
+        val newFoodCategoryData = addEatingToFoodData(eatingData)
+        val eatingDataEntity = newFoodCategoryData.toEatingDataEntity(true)
+        viewModelScope.launch(Dispatchers.IO) {
+            db.eatingDataDao().updateOne(eatingDataEntity)
+        }
+    }
+
+
+    fun onRemoveEating(eatingData: EatingData): Unit {
+
+        val newFoodCategoryData = removeEatingToFoodData(eatingData)
+        val eatingDataEntity = newFoodCategoryData.toEatingDataEntity(true)
+        viewModelScope.launch(Dispatchers.IO) {
+            db.eatingDataDao().updateOne(eatingDataEntity)
         }
     }
 
     private fun addEatingToFoodData(eatingData: EatingData): EatingData {
         return if (eatingData.isLastHalf) {
             EatingData(
-                eatingData.category,
+                eatingData.id,
                 eatingData.eatingValue + 1,
+                eatingData.category,
                 eatingData.maxEatingValue,
                 false
             )
         } else {
-            EatingData(eatingData.category, eatingData.eatingValue, eatingData.maxEatingValue, true)
+            EatingData(
+                eatingData.id,
+                eatingData.eatingValue,
+                eatingData.category,
+                eatingData.maxEatingValue,
+                true
+            )
         }
     }
 
     private fun removeEatingToFoodData(eatingData: EatingData): EatingData {
         return if (eatingData.isLastHalf) {
             EatingData(
-                eatingData.category,
+                eatingData.id,
                 eatingData.eatingValue,
+                eatingData.category,
                 eatingData.maxEatingValue,
                 false
             )
         } else {
             EatingData(
-                eatingData.category,
+                eatingData.id,
                 (eatingData.eatingValue - 1).coerceAtLeast(0),
+                eatingData.category,
                 eatingData.maxEatingValue,
-                if(eatingData.eatingValue == 0) false else true
+                eatingData.eatingValue != 0
             )
+        }
+    }
+
+    fun onChangeGender(newUser: UserProfileEntity): Unit {
+        viewModelScope.launch(Dispatchers.IO) {
+            db.userProfileDao().updateUser(newUser)
         }
     }
 
